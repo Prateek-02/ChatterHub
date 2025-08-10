@@ -1,29 +1,45 @@
 // backend/src/routes/auth.js
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
+const { protect } = require("../middleware/auth");
 
 /* -----------------------------------------------------------------
  *  Generate a signed JWT for a given user ID
  * ----------------------------------------------------------------- */
 const generateToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '30d',
+    expiresIn: process.env.JWT_EXPIRES_IN || "30d",
   });
 
 /* -----------------------------------------------------------------
  *  REGISTER – create a new user
  * ----------------------------------------------------------------- */
-router.post('/register', async (req, res) => {
+router.post("/register", async (req, res) => {
   const { username, email, password, profilePic } = req.body;
 
+  if (!username || !email || !password) {
+    return res
+      .status(400)
+      .json({ message: "Username, email, and password are required" });
+  }
+
   try {
+    // Check username/email uniqueness
+    if (await User.findOne({ username })) {
+      return res.status(400).json({ message: "Username already exists" });
+    }
+    if (await User.findOne({ email })) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
+
     const user = await User.create({
       username,
       email,
       password,
-      profilePic: profilePic || '',
+      profilePic: profilePic || "",
+      status: "offline", // default
     });
 
     const token = generateToken(user._id);
@@ -32,103 +48,109 @@ router.post('/register', async (req, res) => {
       user: user.safeUser,
     });
   } catch (err) {
-    console.error('Register error:', err);
+    console.error("Register error:", err);
 
-    // Handle duplicate key error (e.g. username or email already taken)
-    if (err.code === 11000) {
-      const field = Object.keys(err.keyValue)[0];
-      return res.status(400).json({ message: `${field} already exists` });
+    if (err.name === "ValidationError") {
+      const messages = Object.values(err.errors).map((e) => e.message);
+      return res.status(400).json({ message: messages.join(", ") });
     }
 
-    // Handle validation errors
-    if (err.name === 'ValidationError') {
-      const messages = Object.values(err.errors).map(e => e.message);
-      return res.status(400).json({ message: messages.join(', ') });
-    }
-
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
 /* -----------------------------------------------------------------
  *  LOGIN – authenticate an existing user
  * ----------------------------------------------------------------- */
-router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+router.post("/login", async (req, res) => {
+  const { username, email, password } = req.body;
+
+  if ((!email && !username) || !password) {
+    return res
+      .status(400)
+      .json({ message: "Email or username and password are required" });
+  }
 
   try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: 'Invalid credentials' });
+    const query = email ? { email } : { username };
+    const user = await User.findOne(query);
 
-    const match = await user.matchPassword(password);
-    if (!match) return res.status(400).json({ message: 'Invalid credentials' });
+    if (!user || !(await user.matchPassword(password))) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
 
     const token = generateToken(user._id);
+
     res.json({
       token,
       user: user.safeUser,
     });
   } catch (err) {
-    console.error('Login error:', err);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Login error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
 /* -----------------------------------------------------------------
- *  GET CURRENT USER – return the authenticated user's info
+ *  GET CURRENT USER – return authenticated user's info
  * ----------------------------------------------------------------- */
-const { protect } = require('../middleware/auth');
-
-router.get('/me', protect, async (req, res) => {
+router.get("/me", protect, async (req, res) => {
   res.json(req.user.safeUser);
 });
 
 /* -----------------------------------------------------------------
- *  UPDATE CURRENT USER – update the authenticated user's profile
+ *  UPDATE CURRENT USER – profile edit
  * ----------------------------------------------------------------- */
-router.put('/me', protect, async (req, res) => {
+router.put("/me", protect, async (req, res) => {
   const { username, email, profilePic, status } = req.body;
 
   try {
-    // Check if email is being updated and if it's already taken by another user
+    // Prevent duplicate username/email if updated
     if (email && email !== req.user.email) {
-      const existingUser = await User.findOne({ email });
-      if (existingUser) {
-        return res.status(400).json({ message: 'Email already exists' });
+      if (await User.findOne({ email })) {
+        return res.status(400).json({ message: "Email already exists" });
       }
     }
-
-    // Check if username is being updated and if it's already taken by another user
     if (username && username !== req.user.username) {
-      const existingUser = await User.findOne({ username });
-      if (existingUser) {
-        return res.status(400).json({ message: 'Username already exists' });
+      if (await User.findOne({ username })) {
+        return res.status(400).json({ message: "Username already exists" });
       }
     }
 
-    // Update user fields
     req.user.username = username || req.user.username;
     req.user.email = email || req.user.email;
-    req.user.profilePic = profilePic !== undefined ? profilePic : req.user.profilePic;
+    req.user.profilePic =
+      profilePic !== undefined ? profilePic : req.user.profilePic;
     req.user.status = status || req.user.status;
 
-    // Save updated user
     const updatedUser = await req.user.save();
 
     res.json({
-      message: 'Profile updated successfully',
+      message: "Profile updated successfully",
       user: updatedUser.safeUser,
     });
   } catch (err) {
-    console.error('Update user error:', err);
-    
-    // Handle validation errors
-    if (err.name === 'ValidationError') {
-      const messages = Object.values(err.errors).map(e => e.message);
-      return res.status(400).json({ message: messages.join(', ') });
+    console.error("Update user error:", err);
+
+    if (err.name === "ValidationError") {
+      const messages = Object.values(err.errors).map((e) => e.message);
+      return res.status(400).json({ message: messages.join(", ") });
     }
 
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/* -----------------------------------------------------------------
+ *  GET ALL USERS – for contact list (no passwords)
+ * ----------------------------------------------------------------- */
+router.get("/all", protect, async (req, res) => {
+  try {
+    const users = await User.find().select("-password");
+    res.json(users.map((u) => u.safeUser));
+  } catch (err) {
+    console.error("Get all users error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 

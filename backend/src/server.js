@@ -1,47 +1,67 @@
-// backend/src/server.js
 const path = require("path");
 require("dotenv").config({ path: path.resolve(__dirname, "..", ".env") });
-const express = require('express');
-const http = require('http');
-const cors = require('cors');
-const { Server } = require('socket.io');
+const express = require("express");
+const http = require("http");
+const cors = require("cors");
+const { Server } = require("socket.io");
 
-const connectDB = require('./config/db');
-const authRoutes = require('./routes/auth');
-const messageRoutes = require('./routes/messages');
-const socketHandler = require('./sockets');      // <-- loads the socket logic
-const errorHandler = require('./middleware/errorHandler'); // optional
+const connectDB = require("./config/db");
+const authRoutes = require("./routes/auth");
+const messageRoutes = require("./routes/messages");
+const userRoutes = require("./routes/userRoutes"); // ✅ Added users route
+const socketHandler = require("./sockets");
+const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: { origin: process.env.CLIENT_URL, methods: ['GET', 'POST'] },
-});
+
+// Allowed origins
+const allowedOrigins = [process.env.CLIENT_URL];
 
 // ---------- MIDDLEWARE ----------
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, Postman)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 // ---------- ROUTES ----------
-app.use('/api/auth', authRoutes);
-app.use('/api/messages', messageRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/messages", messageRoutes);
+app.use("/api/users", userRoutes); // ✅ New route added
 
 // ---------- SOCKET.IO ----------
-socketHandler(io);   // attach all socket listeners
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+  },
+});
+socketHandler(io);
 
 // ---------- ERROR HANDLER ----------
-app.use(errorHandler);   // catches any thrown errors (optional)
+app.use(errorHandler);
 
 // ---------- SERVE REACT BUILD IN PRODUCTION ----------
-if (process.env.NODE_ENV === 'production') {
-  const buildPath = path.join(__dirname, '..', '..', 'frontend', 'build');
+if (process.env.NODE_ENV === "production") {
+  const buildPath = path.join(__dirname, "..", "..", "frontend", "build");
   app.use(express.static(buildPath));
-  app.get('*', (req, res) => res.sendFile(path.join(buildPath, 'index.html')));
+  app.get("*", (req, res) =>
+    res.sendFile(path.join(buildPath, "index.html"))
+  );
 }
 
 // ---------- SERVER START ----------
 const PORT = process.env.PORT || 5000;
-
 connectDB().then(() => {
   server.listen(PORT, () => {
     console.log(`🚀 Backend listening on http://localhost:${PORT}`);
