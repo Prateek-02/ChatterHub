@@ -1,4 +1,3 @@
-// backend/src/sockets/index.js
 const jwt = require("jsonwebtoken");
 const Message = require("../models/Message");
 const User = require("../models/User");
@@ -6,7 +5,7 @@ const User = require("../models/User");
 const onlineUsers = new Map(); // socket.id -> userId
 
 module.exports = (io) => {
-  // ---- AUTHENTICATE SOCKET CONNECTION (JWT) ----
+  // Authenticate socket connection with JWT
   io.use(async (socket, next) => {
     const token = socket.handshake.auth?.token;
     if (!token) return next(new Error("Missing auth token"));
@@ -16,7 +15,7 @@ module.exports = (io) => {
       const user = await User.findById(payload.id).select("-password");
       if (!user) return next(new Error("User not found"));
 
-      socket.user = user; // attach user info to socket instance
+      socket.user = user;
       next();
     } catch (err) {
       console.error("Socket auth error:", err);
@@ -24,56 +23,56 @@ module.exports = (io) => {
     }
   });
 
-  // ---- EVENT LISTENERS ----
   io.on("connection", (socket) => {
     console.log(`🟢 ${socket.user.username} connected`);
 
-    // 1. Add to online users
+    // Track online user
     onlineUsers.set(socket.id, socket.user._id.toString());
     io.emit("users:update", Array.from(new Set(onlineUsers.values())));
 
-    socket.join("global");
+    // Join user room for private messaging
+    socket.join(socket.user._id.toString());
 
-    // 2. Broadcast join notification
-    socket.to("global").emit("notification", {
-      text: `${socket.user.username} joined the chat`,
-      type: "join",
-    });
-
-    // 3. Handle chat messages
-    socket.on("chatMessage", async (content, callback) => {
-      if (!content?.trim()) {
-        return callback({ status: "error", message: "Empty message" });
+    // Chat message event handler
+    socket.on("chatMessage", async ({ receiverId, text }, callback) => {
+      if (!receiverId || !text?.trim()) {
+        return callback?.({ status: "error", message: "Receiver and text required" });
       }
 
       try {
-        const msg = await Message.create({
+        // Create and save message
+        let msg = await Message.create({
           sender: socket.user._id,
-          content,
+          recipient: receiverId,
+          text: text.trim(),
         });
 
-        const populated = await msg.populate("sender", "username");
+        // Populate sender and recipient fields for frontend
+        msg = await msg.populate("sender", "username _id");
+        msg = await msg.populate("recipient", "username _id");
 
-        io.in("global").emit("chatMessage", populated);
-        callback({ status: "ok" });
+        // Emit populated message to sender and recipient rooms
+        io.to(socket.user._id.toString()).to(receiverId).emit("chatMessage", {
+          _id: msg._id,
+          senderId: msg.sender._id.toString(),
+          senderUsername: msg.sender.username,
+          receiverId: msg.recipient._id.toString(),
+          receiverUsername: msg.recipient.username,
+          text: msg.text,
+          createdAt: msg.createdAt,
+        });
+
+        callback?.({ status: "ok" });
       } catch (err) {
         console.error("Socket chatMessage error:", err);
-        callback({ status: "error", message: "Failed to store message" });
+        callback?.({ status: "error", message: "Failed to store message" });
       }
     });
 
-    // 4. Handle disconnect
     socket.on("disconnect", () => {
       console.log(`🔴 ${socket.user.username} disconnected`);
-
-      // Remove from online users and emit update
       onlineUsers.delete(socket.id);
       io.emit("users:update", Array.from(new Set(onlineUsers.values())));
-
-      socket.to("global").emit("notification", {
-        text: `${socket.user.username} left the chat`,
-        type: "leave",
-      });
     });
   });
 };

@@ -10,7 +10,7 @@ const { protect } = require("../middleware/auth");
  * ----------------------------------------------------------------- */
 const generateToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || "30d",
+    expiresIn: process.env.JWT_EXPIRES_IN || "7d",
   });
 
 /* -----------------------------------------------------------------
@@ -38,8 +38,6 @@ router.post("/register", async (req, res) => {
       username,
       email,
       password,
-      profilePic: profilePic || "",
-      status: "offline", // default
     });
 
     const token = generateToken(user._id);

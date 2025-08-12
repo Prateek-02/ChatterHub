@@ -41,18 +41,6 @@ const userSchema = new mongoose.Schema(
       required: [true, 'Password is required'],
       minlength: [6, 'Password must be at least 6 characters'],
     },
-
-    profilePic: {
-      type: String,
-      default: '',
-      // you could add a URL validator here if you want
-    },
-
-    status: {
-      type: String,
-      enum: ['online', 'offline', 'away', 'busy'],
-      default: 'offline',
-    },
   },
   { timestamps: true }
 );
@@ -89,8 +77,6 @@ userSchema.virtual('safeUser').get(function () {
     id: this._id,
     username: this.username,
     email: this.email,
-    profilePic: this.profilePic,
-    status: this.status,
     createdAt: this.createdAt,
     updatedAt: this.updatedAt,
   };

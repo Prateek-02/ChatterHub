@@ -8,21 +8,23 @@ const { Server } = require("socket.io");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/auth");
 const messageRoutes = require("./routes/messages");
-const userRoutes = require("./routes/userRoutes"); // ✅ Added users route
+const userRoutes = require("./routes/userRoutes");
 const socketHandler = require("./sockets");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
 const server = http.createServer(app);
 
-// Allowed origins
-const allowedOrigins = [process.env.CLIENT_URL];
+// ✅ Allow both production URL & local dev
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "http://localhost:5173"
+];
 
 // ---------- MIDDLEWARE ----------
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, Postman)
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -37,13 +39,14 @@ app.use(express.json());
 // ---------- ROUTES ----------
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
-app.use("/api/users", userRoutes); // ✅ New route added
+app.use("/api/users", userRoutes);
 
 // ---------- SOCKET.IO ----------
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
   },
 });
 socketHandler(io);
@@ -51,7 +54,7 @@ socketHandler(io);
 // ---------- ERROR HANDLER ----------
 app.use(errorHandler);
 
-// ---------- SERVE REACT BUILD IN PRODUCTION ----------
+// ---------- SERVE REACT BUILD ----------
 if (process.env.NODE_ENV === "production") {
   const buildPath = path.join(__dirname, "..", "..", "frontend", "build");
   app.use(express.static(buildPath));
@@ -59,6 +62,10 @@ if (process.env.NODE_ENV === "production") {
     res.sendFile(path.join(buildPath, "index.html"))
   );
 }
+
+app.get("/", (req, res) => {
+  res.send("Backend is Running");
+});
 
 // ---------- SERVER START ----------
 const PORT = process.env.PORT || 5000;
