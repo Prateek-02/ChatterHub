@@ -8,6 +8,7 @@ export const Home = () => {
   const { logout, user } = useAuth();
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedContact, setSelectedContact] = useState(null);
 
   useEffect(() => {
     const fetchContacts = async () => {
@@ -17,7 +18,6 @@ export const Home = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // Filter out the logged-in user
         setContacts(res.data.filter((u) => u._id !== user?._id));
       } catch (err) {
         console.error("Failed to fetch contacts:", err);
@@ -37,7 +37,7 @@ export const Home = () => {
         <div className="p-4 border-b flex items-center justify-between bg-gradient-to-r from-primary/10 to-transparent">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-lg">
-              {user?.username?.[0]?.toUpperCase() || "U"}
+              {user?.username?.[0]?.toUpperCase()}
             </div>
             <div>
               <h2 className="font-semibold text-gray-800">
@@ -68,14 +68,18 @@ export const Home = () => {
               {contacts.map((c) => (
                 <li
                   key={c._id}
-                  className="flex items-center p-2 rounded-lg hover:bg-primary/5 cursor-pointer transition-colors"
+                  onClick={() => setSelectedContact(c)}
+                  className={`flex items-center p-2 rounded-lg cursor-pointer transition-colors ${
+                    selectedContact?._id === c._id
+                      ? "bg-primary/10"
+                      : "hover:bg-primary/5"
+                  }`}
                 >
                   <div className="w-10 h-10 bg-primary/10 flex items-center justify-center rounded-full text-primary font-semibold">
                     {c.username[0]}
                   </div>
                   <div className="ml-3">
                     <p className="font-medium text-gray-800">{c.username}</p>
-                    <p className="text-xs text-gray-400">Offline</p>
                   </div>
                 </li>
               ))}
@@ -86,17 +90,20 @@ export const Home = () => {
 
       {/* Main Chat Area */}
       <main className="flex-1 flex flex-col">
-        {/* Chat Header */}
         <div className="px-5 py-3 border-b bg-white shadow-sm flex items-center justify-between">
-          <h2 className="font-semibold text-gray-800">Global Chat Room</h2>
-          <span className="text-xs text-gray-500">
-            {contacts.length} users
-          </span>
+          <h2 className="font-semibold text-gray-800">
+            {selectedContact ? `Chat with ${selectedContact.username}` : "Select a contact"}
+          </h2>
         </div>
 
-        {/* Chat Content */}
         <div className="flex-1 overflow-hidden bg-gray-50">
-          <ChatBox />
+          {selectedContact ? (
+            <ChatBox selectedContact={selectedContact} />
+          ) : (
+            <div className="flex items-center justify-center h-full text-gray-400">
+              Select a contact to start chatting
+            </div>
+          )}
         </div>
       </main>
     </div>

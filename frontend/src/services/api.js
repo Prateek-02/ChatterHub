@@ -1,7 +1,7 @@
-export const fetchHistory = async (limit = 50) => {
+export const fetchHistory = async (recipientId) => {
   const token = localStorage.getItem(import.meta.env.VITE_JWT_KEY);
   const res = await fetch(
-    `${import.meta.env.VITE_API_URL}/messages?limit=${limit}`,
+    `${import.meta.env.VITE_API_URL}/messages/${recipientId}`, // ✅ correct route
     {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -10,9 +10,15 @@ export const fetchHistory = async (limit = 50) => {
   );
 
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.message || "Failed to load messages");
+    let errMsg = "Failed to load messages";
+    try {
+      const err = await res.json();
+      errMsg = err.message || errMsg;
+    } catch {
+      // response was not JSON
+    }
+    throw new Error(errMsg);
   }
 
-  return res.json(); // array of messages
+  return res.json(); // ✅ returns array of messages
 };
