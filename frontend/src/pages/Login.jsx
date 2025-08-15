@@ -1,11 +1,21 @@
-import { useState } from "react";
+// src/pages/Login.jsx
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import {
+  FaUser,
+  FaLock,
+  FaRobot,
+  FaBrain,
+  FaLightbulb,
+  FaRocket,
+} from "react-icons/fa";
 
 export const Login = () => {
   const navigate = useNavigate();
   const { login, loading, error } = useAuth();
   const [form, setForm] = useState({ email: "", password: "" });
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,76 +27,70 @@ export const Login = () => {
     }
   };
 
+  // Parallax mouse move effect
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      setMousePos({
+        x: (e.clientX / window.innerWidth - 0.5) * 20,
+        y: (e.clientY / window.innerHeight - 0.5) * 20,
+      });
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 relative overflow-hidden flex items-center justify-center p-4">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0">
-        {/* Floating Orbs */}
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-3/4 right-1/4 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute bottom-1/4 left-1/3 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl animate-pulse delay-2000"></div>
-        
-        {/* Grid Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `
-              linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
-            `,
-            backgroundSize: '50px 50px'
-          }}></div>
-        </div>
-        
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/10"></div>
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4 bg-gradient-to-br from-[#1f1c2c] via-[#928DAB] to-[#1f1c2c]">
+      {/* Floating Icons with Mouse Parallax */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          transform: `translate(${mousePos.x}px, ${mousePos.y}px)`,
+          transition: "transform 0.1s ease-out",
+        }}
+      >
+        <FaRobot className="absolute top-10 left-10 text-6xl text-pink-400 animate-geometric-float" />
+        <FaBrain className="absolute bottom-16 right-16 text-7xl text-blue-400 animate-geometric-float" />
+        <FaLightbulb className="absolute top-1/3 right-20 text-5xl text-yellow-300 animate-geometric-float" />
+        <FaRocket className="absolute bottom-1/4 left-1/4 text-5xl text-green-300 animate-geometric-float" />
       </div>
 
-      <div className="relative z-10 w-full max-w-md">
-        {/* Enhanced Header */}
-        <div className="text-center mb-8">
-          {/* Glowing Icon Container */}
-          <div className="relative inline-flex items-center justify-center mb-6">
-            <div className="absolute inset-0 w-20 h-20 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full blur-lg opacity-60 animate-pulse"></div>
-            <div className="relative inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full shadow-2xl">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
+      {/* Login Card */}
+      <div className="relative z-10 w-full max-w-md animate-fade-in">
+        {/* Header */}
+        <div className="text-center mb-8 animate-slide-in-left">
+          <div className="relative inline-flex items-center justify-center mb-6 animate-fade-in-delay">
+            <div className="absolute inset-0 w-20 h-20 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full blur-lg opacity-60 animate-network-pulse"></div>
+            <div className="relative w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full shadow-2xl flex items-center justify-center">
+              <FaUser className="text-2xl text-white" />
             </div>
           </div>
-          
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent mb-3 tracking-tight">
-            Welcome back
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent mb-3 tracking-tight drop-shadow-lg animate-fade-in-delay-2">
+            Welcome Back
           </h1>
-          <p className="text-purple-200/80 text-lg">Please sign in to your account</p>
-          
-          {/* Decorative Line */}
-          <div className="flex items-center justify-center mt-6 mb-8">
-            <div className="w-16 h-0.5 bg-gradient-to-r from-transparent via-purple-400 to-transparent"></div>
-          </div>
+          <p className="text-purple-100 text-lg animate-fade-in-delay-3">
+            Please sign in to your account
+          </p>
         </div>
 
-        {/* Enhanced Form Card */}
-        <div className="bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/20 relative">
-          {/* Card Glow Effect */}
+        {/* Form */}
+        <div className="bg-white/10 backdrop-blur-2xl rounded-3xl shadow-2xl p-8 border border-white/20 relative overflow-hidden animate-slide-in-right">
           <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-indigo-500/10 rounded-3xl blur-xl"></div>
-          
-          <div className="relative">
+          <div className="relative space-y-6">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Email Field */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-white/90 block">
+              {/* Email */}
+              <div className="animate-fade-in">
+                <label className="text-sm font-medium text-white/90 block mb-2">
                   Email Address
                 </label>
-                <div className="relative">
+                <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-                    </svg>
+                    <FaUser className="text-purple-300" />
                   </div>
                   <input
                     type="email"
                     required
-                    className="w-full pl-10 pr-4 py-3 border border-white/20 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200 bg-white/10 backdrop-blur-sm placeholder-purple-200/50 text-white"
+                    className="w-full pl-10 pr-4 py-3 border border-white/20 rounded-xl bg-white/10 backdrop-blur-sm placeholder-purple-200/50 text-white focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200 group-hover:shadow-lg"
                     placeholder="Enter your email"
                     value={form.email}
                     onChange={(e) =>
@@ -96,21 +100,19 @@ export const Login = () => {
                 </div>
               </div>
 
-              {/* Password Field */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-white/90 block">
+              {/* Password */}
+              <div className="animate-fade-in-delay">
+                <label className="text-sm font-medium text-white/90 block mb-2">
                   Password
                 </label>
-                <div className="relative">
+                <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
+                    <FaLock className="text-purple-300" />
                   </div>
                   <input
                     type="password"
                     required
-                    className="w-full pl-10 pr-4 py-3 border border-white/20 rounded-xl focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200 bg-white/10 backdrop-blur-sm placeholder-purple-200/50 text-white"
+                    className="w-full pl-10 pr-4 py-3 border border-white/20 rounded-xl bg-white/10 backdrop-blur-sm placeholder-purple-200/50 text-white focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200 group-hover:shadow-lg"
                     placeholder="Enter your password"
                     value={form.password}
                     onChange={(e) =>
@@ -120,67 +122,36 @@ export const Login = () => {
                 </div>
               </div>
 
-              {/* Error Message */}
+              {/* Error */}
               {error && (
-                <div className="bg-red-500/20 border border-red-400/30 text-red-200 px-4 py-3 rounded-xl flex items-center space-x-2 backdrop-blur-sm">
-                  <svg className="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                <div className="bg-red-500/20 border border-red-400/30 text-red-200 px-4 py-3 rounded-xl flex items-center space-x-2 backdrop-blur-sm animate-fade-in-delay-2">
                   <span className="text-sm">{error}</span>
                 </div>
               )}
 
-              {/* Submit Button */}
+              {/* Button */}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 disabled:from-gray-500 disabled:to-gray-600 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 transform hover:scale-[1.02] disabled:scale-100 disabled:cursor-not-allowed shadow-2xl hover:shadow-purple-500/25 flex items-center justify-center space-x-2 relative overflow-hidden"
+                className="w-full relative bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-medium py-3 px-4 rounded-xl transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 shadow-lg overflow-hidden"
               >
-                {/* Button Shimmer Effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 translate-x-[-100%] hover:translate-x-[100%] transition-transform duration-1000"></div>
-                
-                {loading ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span>Signing in...</span>
-                  </>
-                ) : (
-                  <span className="relative z-10">Sign In</span>
-                )}
+                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 animate-shimmer"></span>
+                {loading ? "Signing in..." : "Sign In"}
               </button>
             </form>
 
-            {/* Register Link */}
-            <div className="mt-6 text-center">
-              <p className="text-purple-200/80">
-                Don't have an account?{" "}
-                <Link 
-                  to="/register" 
-                  className="text-purple-300 hover:text-white font-medium transition-colors duration-200 hover:underline"
-                >
-                  Create one here
-                </Link>
-              </p>
-            </div>
+            {/* Register */}
+            <p className="text-purple-200/80 text-center mt-6 animate-fade-in-delay-3">
+              Don't have an account?{" "}
+              <Link
+                to="/register"
+                className="text-purple-300 hover:text-white font-medium hover:underline transition-colors duration-200"
+              >
+                Create one here
+              </Link>
+            </p>
           </div>
         </div>
-
-        {/* Enhanced Footer */}
-        <div className="text-center mt-8">
-          <div className="flex items-center justify-center space-x-2 text-purple-200/60 text-sm">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-            <span>Protected by industry-standard encryption</span>
-          </div>
-        </div>
-
-        {/* Floating Elements */}
-        <div className="absolute -top-4 -right-4 w-8 h-8 bg-purple-400/20 rounded-full blur-sm animate-bounce delay-300"></div>
-        <div className="absolute -bottom-6 -left-6 w-6 h-6 bg-blue-400/20 rounded-full blur-sm animate-bounce delay-700"></div>
       </div>
     </div>
   );

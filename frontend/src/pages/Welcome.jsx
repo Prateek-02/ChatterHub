@@ -104,7 +104,7 @@ export const Welcome = () => {
          </div>
          
          {/* Second Message */}
-         <div className="absolute top-16 right-0 bg-gradient-to-r from-teal-500 to-cyan-500 px-6 py-3 rounded-2xl shadow-2xl animate-slide-in-right delay-500 border border-teal-300/20 backdrop-blur-sm">
+         <div className="absolute top-14 right-0 bg-gradient-to-r from-teal-500 to-cyan-500 px-6 py-3 rounded-2xl shadow-2xl animate-slide-in-right delay-500 border border-teal-300/20 backdrop-blur-sm">
            <span>Welcome to ChatterHub! 💬✨</span>
          </div>
          
