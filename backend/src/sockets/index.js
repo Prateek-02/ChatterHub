@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 const Message = require("../models/Message");
 const User = require("../models/User");
 
-const onlineUsers = new Map(); // socket.id -> userId
+const onlineUsers = new Map(); 
 
 module.exports = (io) => {
   // Authenticate socket connection with JWT
