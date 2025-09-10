@@ -5,17 +5,12 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const { protect } = require("../middleware/auth");
 
-/* -----------------------------------------------------------------
- *  Generate a signed JWT for a given user ID
- * ----------------------------------------------------------------- */
+
 const generateToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || "7d",
   });
 
-/* -----------------------------------------------------------------
- *  REGISTER – create a new user
- * ----------------------------------------------------------------- */
 router.post("/register", async (req, res) => {
   const { username, email, password, profilePic } = req.body;
 
@@ -57,9 +52,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-/* -----------------------------------------------------------------
- *  LOGIN – authenticate an existing user
- * ----------------------------------------------------------------- */
+
 router.post("/login", async (req, res) => {
   const { username, email, password } = req.body;
 
@@ -89,16 +82,12 @@ router.post("/login", async (req, res) => {
   }
 });
 
-/* -----------------------------------------------------------------
- *  GET CURRENT USER – return authenticated user's info
- * ----------------------------------------------------------------- */
+
 router.get("/me", protect, async (req, res) => {
   res.json(req.user.safeUser);
 });
 
-/* -----------------------------------------------------------------
- *  UPDATE CURRENT USER – profile edit
- * ----------------------------------------------------------------- */
+
 router.put("/me", protect, async (req, res) => {
   const { username, email, profilePic, status } = req.body;
 
@@ -139,9 +128,6 @@ router.put("/me", protect, async (req, res) => {
   }
 });
 
-/* -----------------------------------------------------------------
- *  GET ALL USERS – for contact list (no passwords)
- * ----------------------------------------------------------------- */
 router.get("/all", protect, async (req, res) => {
   try {
     const users = await User.find().select("-password");

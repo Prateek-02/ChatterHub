@@ -45,11 +45,9 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-/* -----------------------------------------------------------------
- *  PRE‑SAVE HOOK – hash the password **only when it has changed**
- * ----------------------------------------------------------------- */
+
 userSchema.pre('save', async function (next) {
-  // `this` is the document being saved
+  
   if (!this.isModified('password')) return next(); // password unchanged → skip
 
   try {
@@ -61,17 +59,12 @@ userSchema.pre('save', async function (next) {
   }
 });
 
-/* -----------------------------------------------------------------
- *  INSTANCE METHOD – compare a plain‑text password with the stored hash
- * ----------------------------------------------------------------- */
+
 userSchema.methods.matchPassword = async function (plainPassword) {
   return bcrypt.compare(plainPassword, this.password);
 };
 
-/* -----------------------------------------------------------------
- *  VIRTUAL (optional) – expose a safe version of the user object
- *  (e.g., for returning to the client without the password hash)
- * ----------------------------------------------------------------- */
+
 userSchema.virtual('safeUser').get(function () {
   return {
     id: this._id,
@@ -82,9 +75,8 @@ userSchema.virtual('safeUser').get(function () {
   };
 });
 
-/* -----------------------------------------------------------------
- *  MAKE SURE VIRTUALS ARE INCLUDED WHEN CALLING .toObject() / .toJSON()
- * ----------------------------------------------------------------- */
+
+
 userSchema.set('toObject', { virtuals: true });
 userSchema.set('toJSON', { virtuals: true });
 
